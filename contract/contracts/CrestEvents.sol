@@ -8,11 +8,9 @@ pragma solidity ^0.8.24;
  */
 contract CrestEvents {
     struct Event {
-        // Slot 1: 30 bytes used out of 32
-        uint40 startTime;  // 5 bytes
-        uint40 endTime;    // 5 bytes
-        address organizer; // 20 bytes
-        // Slot 2: dynamically sized string
+        uint40 startTime;
+        uint40 endTime;
+        address organizer;
         string ipfsHash;
     }
 
@@ -36,7 +34,8 @@ contract CrestEvents {
             revert InvalidTimeWindow();
         }
 
-        eventId = nextEventId++;
+        eventId = nextEventId;
+        nextEventId++;
 
         events[eventId] = Event({
             startTime: _startTime,
