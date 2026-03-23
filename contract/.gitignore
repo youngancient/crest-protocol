@@ -1,0 +1,17 @@
+# Node dependencies
+node_modules/
+
+# Hardhat artifacts & cache
+artifacts/
+cache/
+typechain-types/
+
+# Hardhat coverage
+coverage/
+coverage.json
+
+# Environment variables
+.env
+
+# TypeScript build output
+dist/
