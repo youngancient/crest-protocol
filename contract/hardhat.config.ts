@@ -22,6 +22,22 @@ const config: HardhatUserConfig = {
             accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
         },
     },
+    etherscan: {
+        apiKey: {
+            // Blockscout doesn't require an actual API key, but Hardhat expects this property.
+            rskTestnet: "any_string"
+        },
+        customChains: [
+            {
+                network: "rskTestnet",
+                chainId: 31,
+                urls: {
+                    apiURL: "https://rootstock-testnet.blockscout.com/api",
+                    browserURL: "https://rootstock-testnet.blockscout.com/"
+                }
+            }
+        ]
+    }
 };
 
 export default config;

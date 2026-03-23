@@ -65,13 +65,16 @@ describe("Crest Protocol", function () {
 
         beforeEach(async function () {
             const now = await time.latest();
+            const startTime = now + 60;
             // Register multiple ongoing/future events
             // eventId 1: active immediately for a long time
-            await crestEvents.connect(organizer).registerEvent(now, now + 1000000, "hash1");
+            await crestEvents.connect(organizer).registerEvent(startTime, startTime + 1000000, "hash1");
             // eventId 2,3,4
-            await crestEvents.connect(organizer).registerEvent(now, now + 1000000, "hash2");
-            await crestEvents.connect(organizer).registerEvent(now, now + 1000000, "hash3");
-            await crestEvents.connect(organizer).registerEvent(now, now + 1000000, "hash4");
+            await crestEvents.connect(organizer).registerEvent(startTime, startTime + 1000000, "hash2");
+            await crestEvents.connect(organizer).registerEvent(startTime, startTime + 1000000, "hash3");
+            await crestEvents.connect(organizer).registerEvent(startTime, startTime + 1000000, "hash4");
+            // fast forward to start time
+            await time.increaseTo(startTime);
         });
 
         it("Dormant user should claim and become Active (Tier 1)", async function () {
@@ -129,6 +132,42 @@ describe("Crest Protocol", function () {
 
             await expect(crestCore.connect(user1).claimAttendance(eventId1, 0, "hash1"))
                 .to.be.revertedWithCustomError(crestCore, "AlreadyAttendedEvent");
+        });
+
+        describe("Revocation", function () {
+            it("Should allow the organizer to revoke an attendance", async function () {
+                // User claims attendance
+                const tx = await crestCore.connect(user1).claimAttendance(eventId1, 0, "hash1");
+                const receipt = await tx.wait();
+
+                // Extract attestationUid from the AttendanceClaimed event
+                const claimedEvent = receipt?.logs.find(
+                    (log: any) => log.fragment && log.fragment.name === "AttendanceClaimed"
+                );
+                const uid = claimedEvent?.args?.attestationUid;
+
+                // Organizer revokes it
+                await expect(crestCore.connect(organizer).revokeAttendance(eventId1, uid))
+                    .to.emit(crestCore, "AttendanceRevoked")
+                    .withArgs(organizer.address, eventId1, uid)
+                    .and.to.emit(mockEAS, "Revoked")
+                    .withArgs(uid, schemaUid);
+            });
+
+            it("Should not allow a non-organizer to revoke an attendance", async function () {
+                // User claims attendance
+                const tx = await crestCore.connect(user1).claimAttendance(eventId1, 0, "hash1");
+                const receipt = await tx.wait();
+
+                const claimedEvent = receipt?.logs.find(
+                    (log: any) => log.fragment && log.fragment.name === "AttendanceClaimed"
+                );
+                const uid = claimedEvent?.args?.attestationUid;
+
+                // user1 tries to revoke their own attendance or a random user tries
+                await expect(crestCore.connect(user1).revokeAttendance(eventId1, uid))
+                    .to.be.revertedWithCustomError(crestCore, "NotEventOrganizer");
+            });
         });
     });
 });

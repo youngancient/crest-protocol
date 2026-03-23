@@ -15,6 +15,17 @@ struct AttestationRequest {
     AttestationRequestData data;
 }
 
+struct RevocationRequestData {
+    bytes32 uid;
+    uint256 value;
+}
+
+struct RevocationRequest {
+    bytes32 schema;
+    RevocationRequestData data;
+}
+
 interface IEAS {
     function attest(AttestationRequest calldata request) external payable returns (bytes32);
+    function revoke(RevocationRequest calldata request) external payable;
 }

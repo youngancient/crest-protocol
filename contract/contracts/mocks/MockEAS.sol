@@ -13,4 +13,10 @@ contract MockEAS is IEAS {
         emit Attested(uid, request.schema, request.data.recipient, request.data.data);
         return uid;
     }
+
+    event Revoked(bytes32 indexed uid, bytes32 indexed schema);
+
+    function revoke(RevocationRequest calldata request) external payable {
+        emit Revoked(request.data.uid, request.schema);
+    }
 }

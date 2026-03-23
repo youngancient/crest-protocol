@@ -25,10 +25,12 @@ contract CrestCore {
 
     event AttendanceClaimed(address indexed user, uint256 indexed eventId, Tier newTier, bytes32 attestationUid);
     event TierUpgraded(address indexed user, Tier oldTier, Tier newTier);
+    event AttendanceRevoked(address indexed organizer, uint256 indexed eventId, bytes32 attestationUid);
 
     error EventNotActive();
     error AlreadyAttendedEvent();
     error CooldownActive(uint256 timeRemaining);
+    error NotEventOrganizer();
 
     /**
      * @param _eas Address of the RAS/EAS contract.
@@ -115,5 +117,32 @@ contract CrestCore {
         bytes32 uid = eas.attest(request);
 
         emit AttendanceClaimed(msg.sender, eventId, newTier, uid);
+    }
+
+    /**
+     * @notice Revokes an attendance attestation. Only callable by the event organizer.
+     * @param eventId The ID of the event the user attended.
+     * @param attestationUid The UID of the EAS attestation to revoke.
+     */
+    function revokeAttendance(uint256 eventId, bytes32 attestationUid) external {
+        // Only allow the original event organizer to revoke attendance for their event
+        (,, address organizer,) = crestEvents.events(eventId);
+        if (msg.sender != organizer) {
+            revert NotEventOrganizer();
+        }
+
+        RevocationRequestData memory requestData = RevocationRequestData({
+            uid: attestationUid,
+            value: 0
+        });
+
+        RevocationRequest memory request = RevocationRequest({
+            schema: schemaUid,
+            data: requestData
+        });
+
+        eas.revoke(request);
+
+        emit AttendanceRevoked(msg.sender, eventId, attestationUid);
     }
 }
