@@ -7,10 +7,6 @@ pragma solidity ^0.8.24;
  * Highly gas-optimized using struct packing.
  */
 contract CrestEvents {
-    // -------------------------------------------------------------
-    // Structs
-    // -------------------------------------------------------------
-
     struct Event {
         // Slot 1: 30 bytes used out of 32
         uint40 startTime;  // 5 bytes
@@ -20,25 +16,13 @@ contract CrestEvents {
         string ipfsHash;
     }
 
-    // -------------------------------------------------------------
-    // State Variables
-    // -------------------------------------------------------------
-
     uint256 public nextEventId = 1;
     mapping(uint256 => Event) public events;
-
-    // -------------------------------------------------------------
-    // Events & Errors
-    // -------------------------------------------------------------
 
     event EventRegistered(uint256 indexed eventId, address indexed organizer, uint40 startTime, uint40 endTime, string ipfsHash);
 
     error InvalidTimeWindow();
     error EventNotFound();
-
-    // -------------------------------------------------------------
-    // External Functions
-    // -------------------------------------------------------------
 
     /**
      * @notice Registers a new event with its time window and IPFS metadata hash.
