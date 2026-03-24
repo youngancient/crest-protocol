@@ -1,10 +1,10 @@
-# Crest Protocol 🎖️
+# Crest Protocol
 
 Crest is a decentralized identity primitive built on the **Rootstock (RSK)** blockchain. It transforms standard event attendance into a verifiable, on-chain reputation system.
 
-Instead of issuing expensive and fragmented NFTs for event attendance, Crest utilizes the **Rootstock Attestation Service (RAS)**—an exact deployment of the Ethereum Attestation Service (EAS)—to issue standardized, composable, and gas-efficient attendance stamps.
+Instead of issuing expensive and fragmented NFTs for event attendance, Crest utilizes the **Rootstock Attestation Service (RAS)** : an exact deployment of the Ethereum Attestation Service (EAS), to issue standardized, composable, and gas-efficient attendance stamps.
 
-## 🌍 Why Rootstock Needs Crest (Use Cases)
+## Why Rootstock Needs Crest (Use Cases)
 
 Crest is designed to be a core public good for the Rootstock ecosystem, driving engagement, retention, and sybil-resistance leveraging Bitcoin's unmatched security layer:
 
@@ -13,7 +13,7 @@ Crest is designed to be a core public good for the Rootstock ecosystem, driving 
 - **Web3 Events & IRL Ticketing**: Rootstock-sponsored conferences, side-events, and meetups can use Crest as a native POAP alternative, keeping the community engaged directly on the ecosystem rather than exporting them to external chains.
 - **Hackathons & Developer Tracking**: Ecosystem programs, accelerators, and Rootstock Academy can issue soulbound attendance to definitively track developer participation across multiple hackathons, measuring real organic builder retention.
 
-## 🏗️ Architecture
+## Architecture
 
 Crest uses an **Event-First** architecture designed to keep the on-chain footprint as lean as possible. The protocol is split into two primary smart contracts:
 
@@ -31,7 +31,7 @@ The Core Logic Gateway and proxy to RAS. This contract seamlessly enforces the p
 
 ---
 
-## 🛠️ Getting Started
+## Getting Started
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v16+)
@@ -56,7 +56,7 @@ npx hardhat test
 
 ---
 
-## 🚀 For Contributors: Protocol Core Deployment
+## For Contributors
 
 *Note: If you are simply building a dApp or frontend to integrate with Crest, you will use our upcoming **TypeScript SDK**. The deployment instructions below are strictly for open-source contributors and infrastructure engineers modifying the core smart contracts.*
 
@@ -94,7 +94,7 @@ npx hardhat run scripts/deploy.ts --network rskTestnet
 
 ---
 
-## 📚 Ecosystem Integrations
+## Ecosystem Integrations
 
 - **Wallets:** Built to integrate seamlessly with standard wallet providers like the Reown AppKit.
 - **Data & RPC:** Powered by the Rootstock public nodes and Alchemy RPC pipelines for reliable transaction handling and event indexing.
