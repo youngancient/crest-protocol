@@ -6,7 +6,7 @@ Instead of issuing expensive and fragmented NFTs for event attendance, Crest uti
 
 ## Why Rootstock Needs Crest (Use Cases)
 
-Crest is designed to be a core public good for the Rootstock ecosystem, driving engagement, retention, and sybil-resistance leveraging Bitcoin's unmatched security layer:
+Crest is designed for the Rootstock ecosystem, driving engagement, retention, and sybil-resistance leveraging Bitcoin's unmatched security layer:
 
 - **DeFi Loyalty & Yield Boosting**: Rootstock DeFi protocols can seamlessly integrate Crest to distribute loyalty airdrops, exclusive yield multipliers, or fee discounts specifically to "Ascended" community members.
 - **Sybil-Resistant Governance**: Rootstock DAOs and protocols can use Crest's time-tested attendance tiers to weight governance voting, ensuring that active, mathematically proven community members have the loudest voice.
