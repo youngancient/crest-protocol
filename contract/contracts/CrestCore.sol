@@ -25,12 +25,16 @@ contract CrestCore {
 
     event AttendanceClaimed(address indexed user, uint256 indexed eventId, Tier newTier, bytes32 attestationUid);
     event TierUpgraded(address indexed user, Tier oldTier, Tier newTier);
+    event TierDowngraded(address indexed user, Tier oldTier, Tier newTier);
     event AttendanceRevoked(address indexed organizer, uint256 indexed eventId, bytes32 attestationUid);
 
     error EventNotActive();
     error AlreadyAttendedEvent();
     error CooldownActive(uint256 timeRemaining);
     error NotEventOrganizer();
+
+    uint256 public constant ASCENSION_THRESHOLD = 10;
+    uint256 public constant DECAY_PERIOD = 30 days;
 
     /**
      * @param _eas Address of the RAS/EAS contract.
@@ -49,8 +53,7 @@ contract CrestCore {
      */
     function getCooldown(Tier tier) public pure returns (uint256) {
         if (tier == Tier.Dormant) return 0;
-        if (tier == Tier.Active) return 1 days;
-        return 7 days; // Ascended
+        return 1 hours; // Both Active and Ascended have a 1 hour cooldown to prevent spam
     }
 
     /**
@@ -72,6 +75,18 @@ contract CrestCore {
 
         // Dynamic Cooldowns based on Tier
         Tier currentTier = userTiers[msg.sender];
+
+        // Process Reputation Decay before allowing new claims
+        if (currentTier != Tier.Dormant && lastAttestationTime[msg.sender] != 0) {
+            if (block.timestamp > lastAttestationTime[msg.sender] + DECAY_PERIOD) {
+                // User decayed due to inactivity! Reset to Dormant
+                emit TierDowngraded(msg.sender, currentTier, Tier.Dormant);
+                currentTier = Tier.Dormant;
+                userTiers[msg.sender] = Tier.Dormant;
+                attendanceCount[msg.sender] = 0; // Penalty: Lose attendance streak
+            }
+        }
+
         uint256 cooldown = getCooldown(currentTier);
         if (block.timestamp < lastAttestationTime[msg.sender] + cooldown) {
             uint256 remaining = (lastAttestationTime[msg.sender] + cooldown) - block.timestamp;
@@ -88,8 +103,8 @@ contract CrestCore {
             userTiers[msg.sender] = Tier.Active;
             newTier = Tier.Active;
             emit TierUpgraded(msg.sender, Tier.Dormant, Tier.Active);
-        } else if (currentTier == Tier.Active && attendanceCount[msg.sender] >= 3) {
-            // Ascend after 3 total attendances
+        } else if (currentTier == Tier.Active && attendanceCount[msg.sender] >= ASCENSION_THRESHOLD) {
+            // Ascend after 10 total attendances
             userTiers[msg.sender] = Tier.Ascended;
             newTier = Tier.Ascended;
             emit TierUpgraded(msg.sender, Tier.Active, Tier.Ascended);

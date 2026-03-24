@@ -88,7 +88,7 @@ describe("Crest Protocol", function () {
             expect(await crestCore.userTiers(user1.address)).to.equal(1); // Active
         });
 
-        it("Active user should hit 1 day cooldown", async function () {
+        it("Active user should hit 1 hour cooldown", async function () {
             // First claim -> Becomes active
             await crestCore.connect(user1).claimAttendance(eventId1, 0, "hash1");
 
@@ -96,39 +96,75 @@ describe("Crest Protocol", function () {
             await expect(crestCore.connect(user1).claimAttendance(eventId2, 0, "hash2"))
                 .to.be.revertedWithCustomError(crestCore, "CooldownActive");
 
-            // Fast forward 1 day
-            await time.increase(86400); // 1 day
+            // Fast forward 1 hour
+            await time.increase(3600); // 1 hour
 
             // Successful claim
             await expect(crestCore.connect(user1).claimAttendance(eventId2, 0, "hash2"))
                 .to.not.be.reverted;
         });
 
-        it("Active user should become Ascended after 3 attendances", async function () {
-            // #1 Attend
-            await crestCore.connect(user1).claimAttendance(eventId1, 0, "hash1");
-            expect(await crestCore.userTiers(user1.address)).to.equal(1); // Active
+        it("Active user should become Ascended after 10 attendances", async function () {
+            // We need 10 distinct events to do 10 attendances. 
+            // We'll create another 6 events quickly inside this test just for this
+            const now = await time.latest();
+            const futureStart = now + 60;
+            for (let i = 5; i <= 10; i++) {
+                await crestEvents.connect(organizer).registerEvent(futureStart, futureStart + 1000000, "hash_extra");
+            }
+            await time.increaseTo(futureStart); // Advance to start time
 
-            // #2 Attend (advance 1 day)
-            await time.increase(86400);
-            await crestCore.connect(user1).claimAttendance(eventId2, 0, "hash2");
-            expect(await crestCore.userTiers(user1.address)).to.equal(1);
+            let currentEventId = 1;
 
-            // #3 Attend (advance 1 day) -> Upgrade to Ascended
-            await time.increase(86400);
-            const tx3 = await crestCore.connect(user1).claimAttendance(eventId3, 0, "hash3");
+            // Do 9 attendances
+            for (let i = 0; i < 9; i++) {
+                await crestCore.connect(user1).claimAttendance(currentEventId++, 0, "hashx");
+                await time.increase(3600); // Wait 1 hour between claims
+            }
 
-            await expect(tx3).to.emit(crestCore, "TierUpgraded")
+            expect(await crestCore.userTiers(user1.address)).to.equal(1); // Still Active
+
+            // 10th Attendance -> Upgrade to Ascended
+            const tx10 = await crestCore.connect(user1).claimAttendance(currentEventId, 0, "hashx");
+
+            await expect(tx10).to.emit(crestCore, "TierUpgraded")
                 .withArgs(user1.address, 1, 2);
 
             expect(await crestCore.userTiers(user1.address)).to.equal(2); // Ascended
+        });
+
+        it("Active user should decay to Dormant after 30 days of inactivity", async function () {
+            // Claim once to become Active
+            await crestCore.connect(user1).claimAttendance(eventId1, 0, "hash1");
+            expect(await crestCore.userTiers(user1.address)).to.equal(1); // Active
+
+            // Fast forward 31 days
+            await time.increase(31 * 24 * 60 * 60);
+
+            // Our original events from the beforeEach block expired after 11.5 days (1,000,000 seconds)
+            // We need to create a brand new active event to claim attendance for this final part of the test
+            const newNow = await time.latest();
+            const newStart = newNow + 60;
+            await crestEvents.connect(organizer).registerEvent(newStart, newStart + 1000000, "hash_new");
+            await time.increaseTo(newStart); // Advance to start time
+
+            // They try to claim attendance on this newly registered event (which will have ID 5)
+            const tx = await crestCore.connect(user1).claimAttendance(5, 0, "hash_new");
+
+            // The claim triggers the decay process, dropping them to Dormant, then processing the claim to make them Active again
+            await expect(tx).to.emit(crestCore, "TierDowngraded").withArgs(user1.address, 1, 0); // Decayed
+            // After being downgraded to Dormant, the claim immediately makes them Active again
+            await expect(tx).to.emit(crestCore, "TierUpgraded").withArgs(user1.address, 0, 1);
+
+            // Their tier is now Active, but their attendanceCount was reset to 1
+            expect(await crestCore.attendanceCount(user1.address)).to.equal(1);
         });
 
         it("Should prevent dual claim for the same event", async function () {
             await crestCore.connect(user1).claimAttendance(eventId1, 0, "hash1");
 
             // even if time passes, cannot claim same event
-            await time.increase(86400);
+            await time.increase(3600);
 
             await expect(crestCore.connect(user1).claimAttendance(eventId1, 0, "hash1"))
                 .to.be.revertedWithCustomError(crestCore, "AlreadyAttendedEvent");
