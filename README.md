@@ -122,6 +122,33 @@ console.log(attendees[0].user, attendees[0].tier);
 const isValid = await crestClient.isAttestationValid("0xUID...");
 ```
 
+### Error Handling
+The `CrestClient` natively intercepts raw Ethers.js transaction exceptions (`CALL_EXCEPTION`) and decodes them into clean, human-readable Custom Error strings automatically. 
+
+**Frontend:**
+Simply display `error.message` directly to your users:
+```typescript
+try {
+    await crestClient.claimAttendance({...});
+} catch (error: any) {
+    toast.error(error.message); // Will nicely display "AlreadyAttended" or "EventInactive"
+}
+```
+
+**Backend:**
+For conditional backend architecture, match the exact error string:
+```typescript
+try {
+    await crestClient.claimAttendance({...});
+} catch (error: any) {
+    if (error.message === "EventInactive") {
+        // Queue retry
+    } else if (error.message === "NotEventOrganizer") {
+        // Throw security alert
+    }
+}
+```
+
 ---
 
 ## Future Improvements

@@ -1,4 +1,5 @@
 import { Contract, Signer, Provider, ContractTransactionResponse, keccak256, toUtf8Bytes } from "ethers";
+import { ErrorDecoder } from "ethers-decode-error";
 import { CREST_CORE_ABI } from "./abis/CrestCore.abi";
 import { CREST_EVENTS_ABI } from "./abis/CrestEvents.abi";
 import { IEAS_ABI } from "./abis/IEAS.abi";
@@ -15,28 +16,44 @@ import {
 } from "./types";
 
 export class CrestClient {
-    public providerOrSigner: Provider | Signer;
-    public crestCore: Contract;
-    public crestEvents: Contract;
-    public eas: Contract;
+    public readonly crestCore: Contract;
+    public readonly crestEvents: Contract;
+    public readonly eas: Contract;
+    public readonly providerOrSigner: Provider | Signer;
+    private readonly errorDecoder: ErrorDecoder;
 
     /**
      * Initialize the CrestClient.
-     * @param crestCoreAddress The address of the deployed CrestCore contract.
-     * @param crestEventsAddress The address of the deployed CrestEvents contract.
-     * @param easAddress The address of the EAS proxy contract.
+     * @param coreAddress The address of the deployed CrestCore contract.
+     * @param eventsAddress The address of the deployed CrestEvents contract.
+     * @param easProxyAddress The address of the EAS proxy contract.
      * @param providerOrSigner An ethers Provider (for read-only) or Signer (for read/write).
      */
     constructor(
-        crestCoreAddress: string,
-        crestEventsAddress: string,
-        easAddress: string,
+        coreAddress: string,
+        eventsAddress: string,
+        easProxyAddress: string,
         providerOrSigner: Provider | Signer
     ) {
         this.providerOrSigner = providerOrSigner;
-        this.crestCore = new Contract(crestCoreAddress, CREST_CORE_ABI, providerOrSigner);
-        this.crestEvents = new Contract(crestEventsAddress, CREST_EVENTS_ABI, providerOrSigner);
-        this.eas = new Contract(easAddress, IEAS_ABI, providerOrSigner);
+
+        this.crestCore = new Contract(coreAddress, CREST_CORE_ABI, providerOrSigner);
+        this.crestEvents = new Contract(eventsAddress, CREST_EVENTS_ABI, providerOrSigner);
+        this.eas = new Contract(easProxyAddress, IEAS_ABI, providerOrSigner);
+
+        this.errorDecoder = ErrorDecoder.create([CREST_CORE_ABI as any, CREST_EVENTS_ABI as any]);
+    }
+
+    private async handleError(promise: Promise<any>): Promise<any> {
+        try {
+            return await promise;
+        } catch (err: any) {
+            const decodedError = await this.errorDecoder.decode(err);
+            if (decodedError.name) {
+                throw new Error(`${decodedError.name}`);
+            }
+            throw err;
+        }
     }
 
     // ==========================================
@@ -172,12 +189,12 @@ export class CrestClient {
 
         const hash = keccak256(toUtf8Bytes(params.passcode));
 
-        return this.crestEvents.registerEvent(
+        return this.handleError(this.crestEvents.registerEvent(
             params.startTime,
             params.endTime,
             params.ipfsHash,
             hash
-        );
+        ));
     }
 
     /**
@@ -188,12 +205,12 @@ export class CrestClient {
         if (!this._isSigner(this.providerOrSigner)) {
             throw new Error("A Signer is required to claim attendance.");
         }
-        return this.crestCore.claimAttendance(
+        return this.handleError(this.crestCore.claimAttendance(
             params.eventId,
             params.role,
             params.ipfsHash,
             params.passcode
-        );
+        ));
     }
 
     /**
@@ -204,10 +221,10 @@ export class CrestClient {
         if (!this._isSigner(this.providerOrSigner)) {
             throw new Error("A Signer is required to revoke attendance.");
         }
-        return this.crestCore.revokeAttendance(
+        return this.handleError(this.crestCore.revokeAttendance(
             params.eventId,
             params.attestationUid
-        );
+        ));
     }
 
     /**
@@ -221,10 +238,10 @@ export class CrestClient {
 
         const hash = keccak256(toUtf8Bytes(params.newPasscode));
 
-        return this.crestEvents.updatePasscode(
+        return this.handleError(this.crestEvents.updatePasscode(
             params.eventId,
             hash
-        );
+        ));
     }
 
     // Helper type guard

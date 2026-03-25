@@ -1,6 +1,6 @@
 import { createAppKit } from "@reown/appkit/react";
 import { EthersAdapter } from "@reown/appkit-adapter-ethers";
-import { rootstockTestnet as rawRootstock, type AppKitNetwork  } from "@reown/appkit/networks";
+import { rootstockTestnet as rawRootstock, type AppKitNetwork } from "@reown/appkit/networks";
 
 
 // 1. Get projectId
@@ -20,8 +20,8 @@ const networks: [AppKitNetwork, ...AppKitNetwork[]] = [
 
 // 3. Create a metadata object - optional
 const metadata = {
-  name: "Token Minting Dapp",
-  description: "A token minting dapp built on Rootstock",
+  name: "Crest Protocol",
+  description: "Crest Protocol Demo Client",
   url: "https://mywebsite.com",
   icons: ["https://avatars.mywebsite.com/"],
 };

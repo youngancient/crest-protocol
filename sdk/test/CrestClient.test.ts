@@ -56,4 +56,16 @@ describe('CrestClient', () => {
         expect(attendees[0].tier).toBe(2);
         expect(attendees[0].attestationUid).toBe('0xuid1');
     });
+
+    it('should decode and throw clean custom errors', async () => {
+        (client.crestCore.claimAttendance as any) = vi.fn().mockRejectedValue(new Error("Raw Ethers Revert hex data"));
+
+        // Mock the internal decoder behavior to prove the interceptor works
+        (client as any).errorDecoder.decode = vi.fn().mockResolvedValue({ name: 'AlreadyAttended' });
+        (client as any)._isSigner = vi.fn().mockReturnValue(true);
+
+        await expect(
+            client.claimAttendance({ eventId: 1, role: 0, ipfsHash: '', passcode: '' })
+        ).rejects.toThrow('AlreadyAttended');
+    });
 });
