@@ -1,0 +1,234 @@
+import { Contract, Signer, Provider, ContractTransactionResponse, keccak256, toUtf8Bytes } from "ethers";
+import { CREST_CORE_ABI } from "./abis/CrestCore.abi";
+import { CREST_EVENTS_ABI } from "./abis/CrestEvents.abi";
+import { IEAS_ABI } from "./abis/IEAS.abi";
+import {
+    Tier,
+    RegisterEventParams,
+    ClaimAttendanceParams,
+    RevokeAttendanceParams,
+    UpdatePasscodeParams,
+    EventData,
+    AttestationData,
+    AttendeeData,
+    RevocationData
+} from "./types";
+
+export class CrestClient {
+    public providerOrSigner: Provider | Signer;
+    public crestCore: Contract;
+    public crestEvents: Contract;
+    public eas: Contract;
+
+    /**
+     * Initialize the CrestClient.
+     * @param crestCoreAddress The address of the deployed CrestCore contract.
+     * @param crestEventsAddress The address of the deployed CrestEvents contract.
+     * @param easAddress The address of the EAS proxy contract.
+     * @param providerOrSigner An ethers Provider (for read-only) or Signer (for read/write).
+     */
+    constructor(
+        crestCoreAddress: string,
+        crestEventsAddress: string,
+        easAddress: string,
+        providerOrSigner: Provider | Signer
+    ) {
+        this.providerOrSigner = providerOrSigner;
+        this.crestCore = new Contract(crestCoreAddress, CREST_CORE_ABI, providerOrSigner);
+        this.crestEvents = new Contract(crestEventsAddress, CREST_EVENTS_ABI, providerOrSigner);
+        this.eas = new Contract(easAddress, IEAS_ABI, providerOrSigner);
+    }
+
+    // ==========================================
+    // Read Methods (State)
+    // ==========================================
+
+    public async getNextEventId(): Promise<number> {
+        const nextId = await this.crestEvents.nextEventId();
+        return Number(nextId);
+    }
+
+    public async getEvent(eventId: number): Promise<EventData> {
+        const evt = await this.crestEvents.events(eventId);
+        return {
+            startTime: Number(evt.startTime),
+            endTime: Number(evt.endTime),
+            organizer: evt.organizer,
+            ipfsHash: evt.ipfsHash,
+            passcodeHash: evt.passcodeHash
+        };
+    }
+
+    public async isEventActive(eventId: number): Promise<boolean> {
+        return this.crestEvents.isEventActive(eventId);
+    }
+
+    public async getUserTier(userAddress: string): Promise<Tier> {
+        const tier = await this.crestCore.userTiers(userAddress);
+        return Number(tier) as Tier;
+    }
+
+    public async getLastAttestationTime(userAddress: string): Promise<number> {
+        const time = await this.crestCore.lastAttestationTime(userAddress);
+        return Number(time);
+    }
+
+    public async getAttendanceCount(userAddress: string): Promise<number> {
+        const count = await this.crestCore.attendanceCount(userAddress);
+        return Number(count);
+    }
+
+    public async hasUserAttended(userAddress: string, eventId: number): Promise<boolean> {
+        return this.crestCore.hasAttended(userAddress, eventId);
+    }
+
+    public async getCooldown(tier: Tier): Promise<number> {
+        const cd = await this.crestCore.getCooldown(tier);
+        return Number(cd);
+    }
+
+    // ==========================================
+    // EAS & Verification Methods
+    // ==========================================
+
+    public async getAttestation(uid: string): Promise<AttestationData> {
+        const att = await this.eas.getAttestation(uid);
+        return {
+            uid: String(att.uid),
+            schema: String(att.schema),
+            time: Number(att.time),
+            expirationTime: Number(att.expirationTime),
+            revocationTime: Number(att.revocationTime),
+            refUID: String(att.refUID),
+            recipient: String(att.recipient),
+            attester: String(att.attester),
+            revocable: Boolean(att.revocable),
+            data: String(att.data)
+        };
+    }
+
+    public async isAttestationValid(uid: string): Promise<boolean> {
+        const att = await this.eas.getAttestation(uid);
+        // An attestation is valid if it hasn't been revoked
+        return Number(att.revocationTime) === 0;
+    }
+
+    // ==========================================
+    // Advanced Query Methods (RPC Logs)
+    // ==========================================
+
+    public async getAllEvents(): Promise<Array<{ eventId: number } & EventData>> {
+        const nextId = await this.getNextEventId();
+        const events = [];
+        for (let i = 1; i < nextId; i++) {
+            events.push({ eventId: i, ...(await this.getEvent(i)) });
+        }
+        return events;
+    }
+
+    public async getEventsByOrganizer(organizer: string, fromBlock?: number | string, toBlock?: number | string): Promise<number[]> {
+        const filter = this.crestEvents.filters.EventRegistered(null, organizer);
+        const logs = await this.crestEvents.queryFilter(filter, fromBlock || 0, toBlock || "latest");
+        return logs.map(log => Number((log as any).args[0]));
+    }
+
+    public async getEventsAttendedByUser(user: string, fromBlock?: number | string, toBlock?: number | string): Promise<number[]> {
+        const filter = this.crestCore.filters.AttendanceClaimed(user);
+        const logs = await this.crestCore.queryFilter(filter, fromBlock || 0, toBlock || "latest");
+        return logs.map(log => Number((log as any).args[1]));
+    }
+
+    public async getAttendeesForEvent(eventId: number, fromBlock?: number | string, toBlock?: number | string): Promise<AttendeeData[]> {
+        const filter = this.crestCore.filters.AttendanceClaimed(null, eventId);
+        const logs = await this.crestCore.queryFilter(filter, fromBlock || 0, toBlock || "latest");
+        return logs.map(log => ({
+            user: String((log as any).args[0]),
+            tier: Number((log as any).args[2]) as Tier,
+            attestationUid: String((log as any).args[3])
+        }));
+    }
+
+    public async getRevocationsForEvent(eventId: number, fromBlock?: number | string, toBlock?: number | string): Promise<RevocationData[]> {
+        const filter = this.crestCore.filters.AttendanceRevoked(null, eventId);
+        const logs = await this.crestCore.queryFilter(filter, fromBlock || 0, toBlock || "latest");
+        return logs.map(log => ({
+            organizer: String((log as any).args[0]),
+            attestationUid: String((log as any).args[2])
+        }));
+    }
+
+    // ==========================================
+    // Write Methods
+    // ==========================================
+
+    /**
+     * Registers a new event.
+     * Requires a Signer.
+     */
+    public async registerEvent(params: RegisterEventParams): Promise<ContractTransactionResponse> {
+        if (!this._isSigner(this.providerOrSigner)) {
+            throw new Error("A Signer is required to register an event.");
+        }
+
+        const hash = keccak256(toUtf8Bytes(params.passcode));
+
+        return this.crestEvents.registerEvent(
+            params.startTime,
+            params.endTime,
+            params.ipfsHash,
+            hash
+        );
+    }
+
+    /**
+     * Claims attendance for an event.
+     * Requires a Signer.
+     */
+    public async claimAttendance(params: ClaimAttendanceParams): Promise<ContractTransactionResponse> {
+        if (!this._isSigner(this.providerOrSigner)) {
+            throw new Error("A Signer is required to claim attendance.");
+        }
+        return this.crestCore.claimAttendance(
+            params.eventId,
+            params.role,
+            params.ipfsHash,
+            params.passcode
+        );
+    }
+
+    /**
+     * Revokes an attendance attestation.
+     * Requires a Signer (must be the event organizer).
+     */
+    public async revokeAttendance(params: RevokeAttendanceParams): Promise<ContractTransactionResponse> {
+        if (!this._isSigner(this.providerOrSigner)) {
+            throw new Error("A Signer is required to revoke attendance.");
+        }
+        return this.crestCore.revokeAttendance(
+            params.eventId,
+            params.attestationUid
+        );
+    }
+
+    /**
+     * Updates an event's passcode hash.
+     * Requires a Signer (must be the event organizer).
+     */
+    public async updatePasscode(params: UpdatePasscodeParams): Promise<ContractTransactionResponse> {
+        if (!this._isSigner(this.providerOrSigner)) {
+            throw new Error("A Signer is required to update a passcode.");
+        }
+
+        const hash = keccak256(toUtf8Bytes(params.newPasscode));
+
+        return this.crestEvents.updatePasscode(
+            params.eventId,
+            hash
+        );
+    }
+
+    // Helper type guard
+    private _isSigner(p: Provider | Signer): p is Signer {
+        return 'signMessage' in p;
+    }
+}
