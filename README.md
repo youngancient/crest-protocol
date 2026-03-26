@@ -12,6 +12,8 @@ Instead of issuing expensive and fragmented NFTs for event attendance, Crest uti
   - [Frontend Usage](#frontend-usage)
   - [Backend Usage](#backend-usage)
   - [Querying Data](#querying-data)
+- [Demo frontend](#demo-frontend)
+  - [Demo video](#demo-video)
 - [Future Improvements](#future-improvements)
 - [Smart Contract Development](#smart-contract-development)
 - [Ecosystem Integrations](#ecosystem-integrations)
@@ -176,7 +178,7 @@ npm run dev
 - **Protocol Reads**: Demonstrates fetching global registered events, user tier, and user attendance status in an integrated dashboard.
 - **Protocol Actions**: Includes buttons for creating mock events and claiming attendance using the passcode system.
 
-### Gallery
+### Demo video
 [![Watch Demo Video on Google Drive](https://img.shields.io/badge/▶_Watch_Demo_Video-Google_Drive-1FA463?style=for-the-badge&logo=googledrive&logoColor=white)](https://drive.google.com/file/d/1u-cVYR7MVLFRuFsL7wyIUsRlA12InEK4/view)
 
 *Note: GitHub does not support embedding Google Drive videos directly. Click the button above to view the walkthrough.*
