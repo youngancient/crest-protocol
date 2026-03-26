@@ -177,9 +177,9 @@ npm run dev
 - **Protocol Actions**: Includes buttons for creating mock events and claiming attendance using the passcode system.
 
 ### Gallery
-<iframe src="https://drive.google.com/file/d/1u-cVYR7MVLFRuFsL7wyIUsRlA12InEK4/preview" width="640" height="480" allow="autoplay" frameborder="0" allowfullscreen></iframe>
+[![Watch Demo Video on Google Drive](https://img.shields.io/badge/▶_Watch_Demo_Video-Google_Drive-1FA463?style=for-the-badge&logo=googledrive&logoColor=white)](https://drive.google.com/file/d/1u-cVYR7MVLFRuFsL7wyIUsRlA12InEK4/view)
 
-*(If the embedded video does not load on your current viewer, [**click here to watch the demo video**](https://drive.google.com/file/d/1u-cVYR7MVLFRuFsL7wyIUsRlA12InEK4/preview))*
+*Note: GitHub does not support embedding Google Drive videos directly. Click the button above to view the walkthrough.*
 
 ---
 ## Future Improvements
