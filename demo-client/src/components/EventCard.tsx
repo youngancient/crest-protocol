@@ -24,7 +24,7 @@ export function EventCard({ ev, isActive, isMyEvent, onClick, nowTS }: EventCard
                 <div className="flex items-center gap-2">
                     <span className="text-rootstock-orange font-mono font-bold">#{ev.eventId}</span>
                     <div className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-widest ${isActive ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-gray-800 text-gray-500'}`}>
-                        {isActive ? 'Active' : nowTS < ev.startTime ? 'Upcoming' : 'Ended'}
+                        {isActive ? 'Active' : nowTS < ev.startTime + 30 ? 'Upcoming' : 'Ended'}
                     </div>
                 </div>
                 <span className="text-xs text-gray-500 font-mono bg-black/50 px-2 py-1 rounded">

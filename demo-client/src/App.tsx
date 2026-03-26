@@ -67,7 +67,7 @@ function App() {
     if (!crestClient) return toast.error("Client not initialized (check .env).");
     setIsRegistering(true);
     try {
-      const startTime = Math.floor(Date.now() / 1000) + 60;
+      const startTime = Math.floor(Date.now() / 1000) + 120;
       const endTime = startTime + 3600;
       const tx = await crestClient.registerEvent({
         startTime, endTime, ipfsHash: "ipfs://QmTz...", passcode: "Crest2026"
@@ -131,7 +131,7 @@ function App() {
     if (activeTab === 'my' && !isMyEvent) return false;
     if (activeTab === 'created' && !isCreated) return false;
 
-    const isActive = nowTS >= ev.startTime && nowTS <= ev.endTime;
+    const isActive = nowTS >= ev.startTime + 30 && nowTS <= ev.endTime;
     if (filterState === 'active' && !isActive) return false;
     if (filterState === 'inactive' && isActive) return false;
 
@@ -175,7 +175,7 @@ function App() {
                     }`}
                 >
                   {tab === 'all' ? 'All Events' : tab === 'my' ? 'My Events' : 'Created'}
-                  {activeTab === tab && filteredEvents.length > 0 && (
+                  {address && activeTab === tab && filteredEvents.length > 0 && (
                     <span className="absolute top-0 left-full -translate-x-[14px] -translate-y-[6px] flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-black text-rootstock-orange rounded-full text-[10px] font-black leading-none shadow-md border border-gray-800 z-10">
                       {filteredEvents.length}
                     </span>
@@ -227,7 +227,7 @@ function App() {
               </div>
             ) : (
               filteredEvents.map(ev => {
-                const isActive = nowTS >= ev.startTime && nowTS <= ev.endTime;
+                const isActive = nowTS >= ev.startTime + 30 && nowTS <= ev.endTime;
                 const isMyEvent = myEventIds.includes(ev.eventId);
                 return (
                   <EventCard

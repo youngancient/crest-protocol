@@ -50,6 +50,10 @@ export class CrestClient {
         } catch (err: any) {
             const eMsg = err.message || JSON.stringify(err);
 
+            if (eMsg.includes("ACTION_REJECTED") || eMsg.includes("user rejected action")) {
+                throw new Error("Transaction rejected by user.");
+            }
+
             // Hard Fallbacks for 4-byte selectors (in case ethers-decode-error misses them)
             if (eMsg.includes("0xc1ab61a1") || eMsg.includes("CooldownActive")) throw new Error("Reputation system cooldown active. Please wait 1 hour between claims.");
             if (eMsg.includes("0x0f0c1bc8") || eMsg.includes("EventNotActive")) throw new Error("Event is not currently active.");

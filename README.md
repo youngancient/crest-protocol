@@ -29,6 +29,14 @@ Crest is designed for the Rootstock ecosystem, driving engagement, retention, an
 
 ---
 
+## Deployed Contracts (Rootstock Testnet)
+
+The latest versions of the protocol's core smart contracts are deployed and verified on the Rootstock Testnet. You can explore the transactions and verified source code on Blockscout:
+- **CrestCore**: [0x46700DBdDdab5b8E2f4ba2B7753CFA6bb40f56fe](https://rootstock-testnet.blockscout.com/address/0x46700DBdDdab5b8E2f4ba2B7753CFA6bb40f56fe?tab=txs)
+- **CrestEvents**: [0xEB415bA43093b15Dff6697Caff234e57b128608f](https://rootstock-testnet.blockscout.com/address/0xEB415bA43093b15Dff6697Caff234e57b128608f?tab=txs)
+
+---
+
 ## Architecture
 
 Crest uses an **Event-First** architecture designed to keep the on-chain footprint as lean as possible. The protocol is split into two primary smart contracts:
@@ -108,7 +116,7 @@ const crestClient = new CrestClient(
 ```
 
 ### Querying Data
-The SDK implements Ethers.js `queryFilter` methods so you can easily pull arrays of data natively from contract logs:
+The SDK implements native Solidity `view` functions and Ethers.js `queryFilter` methods so you can easily pull arrays of data:
 
 ```typescript
 // Get all events created by a specific organizer
@@ -151,6 +159,27 @@ try {
 
 ---
 
+## Demo frontend
+
+The repository includes a scaffolded React template (`/demo-client`) that demonstrates how to integrate the Crest Protocol SDK into a modern frontend.
+
+### Running the Demo
+```bash
+cd demo-client
+npm install
+npm run dev
+```
+
+### Features Demonstrated
+- **Wallet Connection**: Uses `@reown/appkit` for seamless wallet connectivity.
+- **Client Initialization**: Shows how to initialize `CrestClient` with the connected wallet provider.
+- **Protocol Reads**: Demonstrates fetching global registered events, user tier, and user attendance status in an integrated dashboard.
+- **Protocol Actions**: Includes buttons for creating mock events and claiming attendance using the passcode system.
+
+### Gallery
+![Demo Walkthrough Video](./path/to/video.mp4)
+
+---
 ## Future Improvements
 
 To scale the Crest Protocol securely and efficiently to millions of users, the following architectural upgrades are planned:
