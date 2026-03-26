@@ -18,6 +18,7 @@ function App() {
   const [attendanceCount, setAttendanceCount] = useState<number>(0);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   const [allEvents, setAllEvents] = useState<any[]>([]);
   const [myEventIds, setMyEventIds] = useState<number[]>([]);
@@ -35,6 +36,7 @@ function App() {
 
   const fetchData = useCallback(async () => {
     if (!crestClient) return;
+    setIsLoadingData(true);
     try {
       if (address) {
         const _tier = await crestClient.getUserTier(address);
@@ -51,6 +53,8 @@ function App() {
       setAllEvents(events);
     } catch (e: any) {
       console.warn("Could not fetch data:", e.message);
+    } finally {
+      setIsLoadingData(false);
     }
   }, [crestClient, address]);
 
@@ -155,6 +159,7 @@ function App() {
           tier={tier}
           attendanceCount={attendanceCount}
           eventsLength={address ? allEvents.filter(ev => ev.organizer.toLowerCase() === address.toLowerCase()).length : 0}
+          isLoading={isLoadingData}
         />
 
         <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
@@ -210,6 +215,11 @@ function App() {
                   <span className="text-2xl opacity-50">🔗</span>
                 </div>
                 <p className="text-center text-gray-500 uppercase tracking-widest font-bold text-sm">Connect wallet to view events</p>
+              </div>
+            ) : isLoadingData ? (
+              <div className="col-span-1 md:col-span-2 py-16 flex flex-col justify-center items-center gap-4">
+                <svg className="animate-spin h-8 w-8 text-rootstock-orange/70" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <span className="text-gray-500 uppercase tracking-widest font-bold text-xs animate-pulse">Synchronizing Logs...</span>
               </div>
             ) : filteredEvents.length === 0 ? (
               <div className="col-span-1 md:col-span-2 py-12 text-center text-gray-600 text-sm font-semibold uppercase tracking-widest">

@@ -3,19 +3,35 @@ interface ReputationPanelProps {
     tier: number;
     attendanceCount: number;
     eventsLength: number;
+    isLoading?: boolean;
 }
 
-export function ReputationPanel({ isConnected, tier, attendanceCount, eventsLength }: ReputationPanelProps) {
+export function ReputationPanel({ isConnected, tier, attendanceCount, eventsLength, isLoading }: ReputationPanelProps) {
     return (
-        <div className="bg-black/60 border border-gray-800 rounded-2xl p-8 shadow-2xl backdrop-blur-md mb-8">
+        <div className="bg-black/60 border border-gray-800 rounded-2xl p-8 shadow-2xl backdrop-blur-md mb-8 min-h-[160px]">
             <div className="flex justify-between items-center mb-8">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-rootstock-orange animate-pulse"></span>
+                    <span className={`w-2 h-2 rounded-full ${isLoading ? 'bg-yellow-500 animate-bounce' : 'bg-rootstock-orange animate-pulse'}`}></span>
                     Your Reputation Profile
                 </h2>
             </div>
 
-            {isConnected ? (
+            {isLoading && isConnected ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 bg-gray-900/60 rounded-xl border border-gray-800/50 h-[72px] animate-pulse flex justify-between items-center">
+                        <div className="h-3 bg-gray-800 rounded w-20"></div>
+                        <div className="h-6 bg-gray-800 rounded w-24"></div>
+                    </div>
+                    <div className="p-4 bg-gray-900/60 rounded-xl border border-gray-800/50 h-[72px] animate-pulse flex justify-between items-center">
+                        <div className="h-3 bg-gray-800 rounded w-28"></div>
+                        <div className="h-6 bg-gray-800 rounded w-8"></div>
+                    </div>
+                    <div className="p-4 bg-gray-900/60 rounded-xl border border-gray-800/50 h-[72px] animate-pulse flex justify-between items-center">
+                        <div className="h-3 bg-gray-800 rounded w-24"></div>
+                        <div className="h-6 bg-gray-800 rounded w-8"></div>
+                    </div>
+                </div>
+            ) : isConnected ? (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="group flex justify-between items-center p-4 bg-gray-900/60 hover:bg-gray-800/80 rounded-xl border border-gray-800/50 transition-colors duration-300">
                         <span className="text-xs uppercase font-semibold tracking-widest text-gray-500 group-hover:text-gray-400">Current Tier</span>
