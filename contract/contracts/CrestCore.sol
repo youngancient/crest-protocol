@@ -22,6 +22,7 @@ contract CrestCore {
     mapping(address => uint256) public attendanceCount;
     // Prevent dual sweeping in the same event
     mapping(address => mapping(uint256 => bool)) public hasAttended;
+    mapping(address => uint256[]) public userAttendedEvents;
 
     // Track attestations for secure revocation
     mapping(bytes32 => uint256) public attestationToEvent;
@@ -108,6 +109,7 @@ contract CrestCore {
 
         // Update State Machine
         hasAttended[msg.sender][eventId] = true;
+        userAttendedEvents[msg.sender].push(eventId);
         lastAttestationTime[msg.sender] = block.timestamp;
         attendanceCount[msg.sender]++;
 
@@ -207,5 +209,14 @@ contract CrestCore {
         eas.revoke(request);
 
         emit AttendanceRevoked(msg.sender, eventId, attestationUid);
+    }
+
+    /**
+     * @notice Fetch all event IDs a user has claimed attendance for.
+     * @param user The address of the user.
+     * @return An array of event IDs.
+     */
+    function getEventsAttendedByUser(address user) external view returns (uint256[] memory) {
+        return userAttendedEvents[user];
     }
 }

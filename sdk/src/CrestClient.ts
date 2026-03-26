@@ -48,10 +48,22 @@ export class CrestClient {
         try {
             return await promise;
         } catch (err: any) {
-            const decodedError = await this.errorDecoder.decode(err);
-            if (decodedError.name) {
-                throw new Error(`${decodedError.name}`);
-            }
+            const eMsg = err.message || JSON.stringify(err);
+
+            // Hard Fallbacks for 4-byte selectors (in case ethers-decode-error misses them)
+            if (eMsg.includes("0xc1ab61a1") || eMsg.includes("CooldownActive")) throw new Error("Reputation system cooldown active. Please wait 1 hour between claims.");
+            if (eMsg.includes("0x0f0c1bc8") || eMsg.includes("EventNotActive")) throw new Error("Event is not currently active.");
+            if (eMsg.includes("0xec04def4") || eMsg.includes("AlreadyAttendedEvent")) throw new Error("You have already claimed attendance for this event.");
+            if (eMsg.includes("0x76ca2c88") || eMsg.includes("NotEventOrganizer")) throw new Error("Only the organizer can perform this action.");
+            if (eMsg.includes("0xc21b672c") || eMsg.includes("InvalidPasscode")) throw new Error("Incorrect passcode. Claim denied.");
+            if (eMsg.includes("0xbd8ba84d") || eMsg.includes("InvalidAttestation")) throw new Error("Invalid or mismatched RAS attestation.");
+
+            try {
+                const decodedError = await this.errorDecoder.decode(err);
+                if (decodedError.name) {
+                    throw new Error(`${decodedError.name}`);
+                }
+            } catch (e) { /* ignore */ }
             throw err;
         }
     }
@@ -144,15 +156,13 @@ export class CrestClient {
     }
 
     public async getEventsByOrganizer(organizer: string, fromBlock?: number | string, toBlock?: number | string): Promise<number[]> {
-        const filter = this.crestEvents.filters.EventRegistered(null, organizer);
-        const logs = await this.crestEvents.queryFilter(filter, fromBlock || 0, toBlock || "latest");
-        return logs.map(log => Number((log as any).args[0]));
+        const ids = await this.crestEvents.getEventsByOrganizer(organizer);
+        return ids.map((id: any) => Number(id));
     }
 
     public async getEventsAttendedByUser(user: string, fromBlock?: number | string, toBlock?: number | string): Promise<number[]> {
-        const filter = this.crestCore.filters.AttendanceClaimed(user);
-        const logs = await this.crestCore.queryFilter(filter, fromBlock || 0, toBlock || "latest");
-        return logs.map(log => Number((log as any).args[1]));
+        const ids = await this.crestCore.getEventsAttendedByUser(user);
+        return ids.map((id: any) => Number(id));
     }
 
     public async getAttendeesForEvent(eventId: number, fromBlock?: number | string, toBlock?: number | string): Promise<AttendeeData[]> {

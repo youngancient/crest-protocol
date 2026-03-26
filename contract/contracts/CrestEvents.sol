@@ -17,6 +17,7 @@ contract CrestEvents {
 
     uint256 public nextEventId = 1;
     mapping(uint256 => Event) public events;
+    mapping(address => uint256[]) public organizerEvents;
 
     event EventRegistered(uint256 indexed eventId, address indexed organizer, uint40 startTime, uint40 endTime, string ipfsHash, bytes32 passcodeHash);
     event PasscodeUpdated(uint256 indexed eventId, bytes32 newPasscodeHash);
@@ -48,6 +49,8 @@ contract CrestEvents {
             ipfsHash: _ipfsHash,
             passcodeHash: _passcodeHash
         });
+
+        organizerEvents[msg.sender].push(eventId);
 
         emit EventRegistered(eventId, msg.sender, _startTime, _endTime, _ipfsHash, _passcodeHash);
     }
@@ -82,5 +85,14 @@ contract CrestEvents {
         evt.passcodeHash = _newPasscodeHash;
 
         emit PasscodeUpdated(_eventId, _newPasscodeHash);
+    }
+
+    /**
+     * @notice Fetch all event IDs created by a specific organizer.
+     * @param _organizer The address of the organizer.
+     * @return An array of event IDs.
+     */
+    function getEventsByOrganizer(address _organizer) external view returns (uint256[] memory) {
+        return organizerEvents[_organizer];
     }
 }

@@ -156,8 +156,8 @@ try {
 To scale the Crest Protocol securely and efficiently to millions of users, the following architectural upgrades are planned:
 
 ### 1. Subgraph Integration (The Graph)
-While the current SDK fetches data using Ethers.js `queryFilter` to allow immediate testing without infrastructure overhead, this approach does not scale infinitely. 
-- **Action Item:** Deploy a custom **Crest Protocol Subgraph** that tracks `CrestEvents` and `CrestCore` logs natively. The SDK can then be improved to accept an optional `subgraphUrl` parameter to query The Graph directly, bypassing RPC rate limits.
+During initial testing with Alchemy's public RPC infrastructure on the Rootstock Testnet, severe rate limiting and strict 10-block log limits hindered the `eth_getLogs` queries in the SDK. To circumvent this without crushing the user experience, the protocol temporarily shifted to tracking state explicitly in `CrestEvents` and `CrestCore` using native Solidity `view` functions.
+- **Action Item:** Deploy a custom **Crest Protocol Subgraph** to safely index protocol logs and remove the array iteration logic from the core smart contracts. The SDK can then be upgraded to query The Graph directly, significantly lowering on-chain gas costs and permanently bypassing all RPC restrictions.
 
 ### 2. Robust Off-Chain Passcode Management
 `passcodeHash` is public and non-recoverable on-chain. While the SDK supports `updatePasscode` for lost codes, a better preventative measure is needed.
@@ -166,6 +166,10 @@ While the current SDK fetches data using Ethers.js `queryFilter` to allow immedi
 ### 3. Gasless / Sponsored Transactions (Account Abstraction)
 - **Action Item:** Implement an **EIP-4337 Biconomy or Etherspot** integration within the SDK.
 - **Action Item:** Allows attendees at physical events to claim attendance seamlessly via signature without needing gas tokens (RBTC), removing the onboarding friction for non-crypto natives.
+
+### 4. IPFS Metadata Pipeline
+Currently, the protocol relies on a dummy `"ipfs://QmTz..."` hash for event metadata. Since storing strings like event titles, banners, and descriptions natively on-chain is prohibitively expensive, a robust off-chain pipeline is required.
+- **Action Item:** Extend the existing minimalist dashboard with a seamless "Create Event" form. Organizers will fill in their event details directly in the UI, which will automatically pin the JSON data to an IPFS provider (like Pinata). The resulting true `ipfsHash` will then be passed into the `registerEvent()` transaction, allowing the event cards to dynamically fetch and render the rich, decentralized metadata.
 
 ---
 

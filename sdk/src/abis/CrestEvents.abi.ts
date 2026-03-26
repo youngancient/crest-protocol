@@ -3,6 +3,7 @@ export const CREST_EVENTS_ABI = [
     "function nextEventId() view returns (uint256)",
     "function events(uint256 id) view returns (uint40 startTime, uint40 endTime, address organizer, string ipfsHash, bytes32 passcodeHash)",
     "function isEventActive(uint256 _eventId) view returns (bool isActive)",
+    "function getEventsByOrganizer(address _organizer) view returns (uint256[])",
 
     // Write
     "function registerEvent(uint40 _startTime, uint40 _endTime, string _ipfsHash, bytes32 _passcodeHash) returns (uint256 eventId)",

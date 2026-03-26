@@ -6,8 +6,8 @@ async function main() {
   console.log("Account balance:", (await ethers.provider.getBalance(deployer.address)).toString());
 
   // Validate Environment Variables for Production
-  const rasAddress = process.env.RAS_ADDRESS;
-  const schemaUid = process.env.SCHEMA_UID;
+  const rasAddress = process.env.RAS_ADDRESS?.toLowerCase();
+  const schemaUid = process.env.SCHEMA_UID?.toLowerCase();
 
   if (!rasAddress) {
     throw new Error("CRITICAL: Missing EAS_ADDRESS in environment variables");

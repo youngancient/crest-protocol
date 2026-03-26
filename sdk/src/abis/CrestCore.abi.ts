@@ -12,6 +12,7 @@ export const CREST_CORE_ABI = [
     "function ASCENSION_THRESHOLD() view returns (uint256)",
     "function DECAY_PERIOD() view returns (uint256)",
     "function getCooldown(uint8 tier) pure returns (uint256)",
+    "function getEventsAttendedByUser(address user) view returns (uint256[])",
 
     // Write
     "function claimAttendance(uint256 eventId, uint8 role, string ipfsHash, string passcode)",

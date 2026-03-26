@@ -10,4 +10,8 @@
   body {
     @apply bg-rootstock-dark text-rootstock-light antialiased font-sans m-0 p-0;
   }
+
+  button {
+    @apply cursor-pointer;
+  }
 }
