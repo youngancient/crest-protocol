@@ -49,7 +49,7 @@ function App() {
       }
 
       const events = await crestClient.getAllEvents();
-      events.sort((a, b) => b.eventId - a.eventId);
+      events.sort((a: any, b: any) => b.eventId - a.eventId);
       setAllEvents(events);
     } catch (e: any) {
       console.warn("Could not fetch data:", e.message);
