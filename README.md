@@ -177,7 +177,10 @@ npm run dev
 - **Protocol Actions**: Includes buttons for creating mock events and claiming attendance using the passcode system.
 
 ### Gallery
-![Demo Walkthrough Video](./path/to/video.mp4)
+<video width="640" height="480" controls>
+  <source src="https://drive.google.com/uc?export=download&id=1u-cVYR7MVLFRuFsL7wyIUsRlA12InEK4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
 
 ---
 ## Future Improvements
