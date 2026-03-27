@@ -1,11 +1,11 @@
 # Crest Protocol
 
-Crest is a decentralized identity primitive built on the **Rootstock (RSK)** blockchain. It transforms standard event attendance into a verifiable, on-chain reputation system.
-
-Instead of issuing expensive and fragmented NFTs for event attendance, Crest utilizes the **Rootstock Attestation Service (RAS)** (an exact deployment of the Ethereum Attestation Service) to issue standardized, composable, and gas-efficient attendance stamps.
-
 ## Table of Contents
-- [Why Rootstock Needs Crest](#why-rootstock-needs-crest)
+- [What the Project Does](#what-the-project-does)
+- [Protocol Rules](#protocol-rules)
+- [Design Choices & Reasoning](#design-choices--reasoning)
+- [Why Rootstock Needs Crest (Use Cases)](#why-rootstock-needs-crest-use-cases)
+- [Deployed Contracts (Rootstock Testnet)](#deployed-contracts-rootstock-testnet)
 - [Architecture](#architecture)
 - [SDK Integration](#sdk-integration)
   - [Installation](#installation)
@@ -20,14 +20,36 @@ Instead of issuing expensive and fragmented NFTs for event attendance, Crest uti
 
 ---
 
+## What the Project Does
+Crest is a decentralized identity primitive on the **Rootstock (RSK)** blockchain that turns event attendance into a verifiable, on-chain reputation system.
+
+Instead of issuing standard POAPs or expensive NFTs, Crest uses the **Rootstock Attestation Service (RAS)** (a port of the Ethereum Attestation Service) to hand out standardized, composable, and gas-efficient attendance stamps. It gives developers an SDK and smart contracts so organizers can easily spin up events, and users can claim their attendance to build up their reputation tier over time.
+
+## Protocol Rules
+We built Crest with a few strict on-chain rules to keep things secure, stop sybil attacks, and make sure reputation actually means something:
+- **Time-Gated Claim Windows:** You can only claim attendance while an event is actively running.
+- **Passcode Protection:** Claiming requires an off-chain passcode from the organizer, so bots can't just blindly scalp attendance.
+- **Anti-Spam Cooldowns:** Active and Ascended users share a strict **1-hour cooldown** between claims to prevent spam.
+- **Reputation Decay (30-Day Rule):** If you don't attend any events for **30 days**, your reputation decays. You'll drop back to the `Dormant` tier and lose your streak.
+- **Tier State Machine:** Users have to organically earn their reputation tier (`Dormant` → `Active` → `Ascended`) by consistently showing up.
+- **Strict Revocation:** Only the original event organizer can call `revokeAttendance()` to penalize bad actors. You can't revoke your own attendance.
+
+## Design Choices & Reasoning
+Here's why we built it this way:
+- **RAS Attestations over NFTs:** Traditional NFTs are expensive to mint and annoying to query on-chain. RAS attestations are cheap, standardized, and natively composable, making it way easier for DAOs and DeFi protocols to read a user's attendance record directly.
+- **Event-First Architecture:** Organizers just interact with our straightforward `CrestEvents` interface rather than wrestling with the complex RAS schema registry. It abstracts away the headache of formatting attestations.
+- **Storage Packing:** In `CrestEvents.sol`, we tightly pack the event start times, end times, and organizer addresses into a single 32-byte storage slot to keep gas costs as low as possible.
+- **Explicit On-Chain State Tracking:** Public Rootstock Testnet RPCs have extremely strict rate limiting and log-fetching limits, which made `eth_getLogs` unreliable for our SDK. To fix this, we track state explicitly in `CrestEvents` and `CrestCore` using native Solidity `view` functions. We prioritized a rock-solid frontend UX over saving a few bytes of storage.
+- **Decayed Reputation:** We wanted "Ascended" status to actually mean something to protocols offering yield or governance weight. The 30-day decay stops early adopters from squatting on high tiers without actually participating in the ecosystem anymore.
+
 ## Why Rootstock Needs Crest (Use Cases)
 
-Crest is designed for the Rootstock ecosystem, driving engagement, retention, and sybil-resistance leveraging Bitcoin's unmatched security layer:
+Crest is built specifically for the Rootstock ecosystem to drive engagement and retention, using Bitcoin's security layer to keep things sybil-resistant:
 
-- **DeFi Loyalty & Yield Boosting**: Rootstock DeFi protocols can seamlessly integrate Crest to distribute loyalty airdrops, exclusive yield multipliers, or fee discounts specifically to "Ascended" community members.
-- **Sybil-Resistant Governance**: DAOs can use Crest's time-tested attendance tiers to weight governance voting, ensuring that active, mathematically proven community members have the loudest voice.
-- **Web3 Events & IRL Ticketing**: Rootstock-sponsored conferences and meetups can use Crest as a native POAP alternative, keeping the community engaged directly on the ecosystem rather than exporting them to external chains.
-- **Hackathons & Developer Tracking**: Ecosystem programs can issue soulbound attendance to definitively track developer participation across multiple hackathons, measuring real organic builder retention.
+- **DeFi Loyalty & Yield Boosting**: Rootstock DeFi protocols can plug into Crest to hand out loyalty airdrops, yield multipliers, or fee discounts to "Ascended" community members.
+- **Sybil-Resistant Governance**: DAOs can use our time-tested attendance tiers to weight voting, making sure that active, proven community members actually get the loudest voice.
+- **Web3 Events & IRL Ticketing**: Rootstock-sponsored conferences and meetups can use Crest instead of standard POAPs, keeping users sticky to the RSK ecosystem instead of bouncing them to another chain.
+- **Hackathons & Developer Tracking**: Ecosystem programs can issue soulbound attendance to track developer participation across hackathons and measure real builder retention.
 
 ---
 
@@ -41,19 +63,13 @@ The latest versions of the protocol's core smart contracts are deployed and veri
 
 ## Architecture
 
-Crest uses an **Event-First** architecture designed to keep the on-chain footprint as lean as possible. The protocol is split into two primary smart contracts:
+The protocol is split into two primary smart contracts to separate event creation logic from core attestation logic:
 
 ### 1. CrestEvents (`CrestEvents.sol`)
-The Event Management Primitive. Provides a simplified interface for event organizers to register upcoming events without interacting directly with the complex RAS protocol.
-- **Gas Optimized:** Event start times, end times, and organizer addresses are tightly packed into a single 32-byte storage slot.
-- **Time Windows:** Enforces strict active windows for when attendance can be claimed.
+The Event Management Primitive. Provides a simplified interface for event organizers to register upcoming events. It stores event metadata (start time, end time, organizer address, passcode hash) securely and acts as a source of truth for the Core contract to query during attendance claims.
 
 ### 2. CrestCore (`CrestCore.sol`)
-The Core Logic Gateway and proxy to RAS. This contract seamlessly enforces the protocol's time-based rules and state machine transitions.
-- **Tier State Machine:** Users organically upgrade their reputation tier (`Dormant` → `Active` → `Ascended`) as they attend more events.
-- **Anti-Spam Cooldowns:** Active and Ascended users share a strict **1-hour cooldown** between claims to prevent spamming the system.
-- **Reputation Decay (30-Day Rule):** If a user fails to attend an event for **30 days**, their reputation decays, dropping them back to the `Dormant` tier and resetting their attendance streak to zero.
-- **Revocation:** Only the original event organizer has the explicit authority to call `revokeAttendance()` to penalize cheaters.
+The Core Logic Gateway and proxy to RAS. This contract handles user attendance requests, verifies the event's validity against `CrestEvents`, enforces the protocol's overarching rules (cooldowns, decay, etc.), and ultimately mints the standardized attendance attestation via the Rootstock Attestation Service.
 
 ---
 
