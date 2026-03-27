@@ -34,8 +34,8 @@ Crest is designed for the Rootstock ecosystem, driving engagement, retention, an
 ## Deployed Contracts (Rootstock Testnet)
 
 The latest versions of the protocol's core smart contracts are deployed and verified on the Rootstock Testnet. You can explore the transactions and verified source code on Blockscout:
-- **CrestCore**: [0x46700DBdDdab5b8E2f4ba2B7753CFA6bb40f56fe](https://rootstock-testnet.blockscout.com/address/0x46700DBdDdab5b8E2f4ba2B7753CFA6bb40f56fe?tab=txs)
-- **CrestEvents**: [0xEB415bA43093b15Dff6697Caff234e57b128608f](https://rootstock-testnet.blockscout.com/address/0xEB415bA43093b15Dff6697Caff234e57b128608f?tab=txs)
+- **CrestCore**: [0x46700DBdDdab5b8E2f4ba2B7753CFA6bb40f56fe](https://rootstock-testnet.blockscout.com/address/0x46700DBdDdab5b8E2f4ba2B7753CFA6bb40f56fe?tab=contract)
+- **CrestEvents**: [0xEB415bA43093b15Dff6697Caff234e57b128608f](https://rootstock-testnet.blockscout.com/address/0xEB415bA43093b15Dff6697Caff234e57b128608f?tab=contract)
 
 ---
 
